@@ -1,0 +1,49 @@
+const express = require('express');
+const router = express.Router();
+const { MongoClient } = require('mongodb');
+
+const uri = 'mongodb+srv://babtandayana2:fgqitiace2UlTxxP@cluster0.w7qgva7.mongodb.net/';
+
+async function connectToDatabase() {
+    try {
+        const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+        await client.connect();
+        return client.db('mongodbVSCodePlaygroundDB'); // Return the database instance
+    } catch (err) {
+        console.error('Error connecting to MongoDB Atlas', err);
+        throw err; // Throw error for handling elsewhere
+    }
+}
+
+// Route to get all tips from the database
+router.get('/', async (req, res, next) => {
+    try {
+        const db = await connectToDatabase();
+        const tips = await db.collection('tips').find({}).toArray();
+        res.status(200).json(tips);
+    } catch (err) {
+        console.error('Error fetching tips from database', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Route to add a tip to the database
+router.post('/', async (req, res, next) => {
+    try {
+        const db = await connectToDatabase();
+        const tip= {
+            id: req.body.id,
+            name: req.body.name,
+            category: req.body.category,
+            description: req.body.description,
+            date: req.body.date
+        };
+        await db.collection('tips').insertOne(tip);
+        res.status(200).json({ message: 'Tip added successfully' });
+    } catch (err) {
+        console.error('Error adding tip to database', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+module.exports = router;
